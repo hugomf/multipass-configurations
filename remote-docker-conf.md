@@ -4,6 +4,8 @@ This guide explains how to set up Docker on your macOS host to control a Docker 
 
 ## Prerequisites
 
+### On macOS Host:
+
 1. Multipass installed on your macOS host.
 2. Configure multipass **bridge** as follows:
 
@@ -31,7 +33,7 @@ This guide explains how to set up Docker on your macOS host to control a Docker 
 
 **Warning:** This method sends data unencrypted. Use only on trusted networks.
 
-### On the Multipass Ubuntu VM
+### Inside VM (via `mp shell docker`):
 
 1. **Modify Docker Daemon Configuration:**
     * Create or edit `/etc/docker/daemon.json`:
@@ -84,7 +86,7 @@ This guide explains how to set up Docker on your macOS host to control a Docker 
 
     You should see `dockerd` listening on `0.0.0.0:2375`.
 
-### On your macOS Host
+### On macOS Host:
 
 1. **Set the `DOCKER_HOST` Environment Variable:**
 

@@ -4,6 +4,8 @@
 
 ## Configuration
 
+### On macOS Host:
+
 * Make sure to set an alias `alias mp=multipass` on your `.bashrc` or `.zshrc` file
 
 * Configure multipass **bridge** as follows:
@@ -25,6 +27,8 @@ mp launch -n lxc -c 2 -m 4G -d 50G --bridged
 ```shell
 mp shell lxc
 ```
+
+### Inside VM (via `mp shell lxc`):
 
 * Initialize the configuration
 
@@ -72,6 +76,8 @@ exit
 ```
 
 ## Configure LXC client on host machine (MACOS)
+
+### On macOS Host:
 
 * Add the remote server in the client *(getting multipass lxc's instance IP address)*
 
