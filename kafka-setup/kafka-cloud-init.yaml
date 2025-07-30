@@ -1,0 +1,90 @@
+#cloud-config
+# This cloud-init script automates the installation and setup of a 
+# single-node Kafka cluster running in KRaft mode on Ubuntu 24.04.
+
+# 1. Update packages and install dependencies
+package_update: true
+package_upgrade: true
+packages:
+  - openjdk-17-jdk
+  - wget
+
+runcmd:
+  # 2. Download and install Kafka 4.0.0 (latest version)
+  - 'wget https://downloads.apache.org/kafka/4.0.0/kafka_2.13-4.0.0.tgz -P /tmp'
+  - 'tar -xzf /tmp/kafka_2.13-4.0.0.tgz -C /tmp'
+  - 'mv /tmp/kafka_2.13-4.0.0 /opt/kafka'
+  - 'chown -R ubuntu:ubuntu /opt/kafka'
+
+  # 3. Add Kafka to PATH for ubuntu user
+  - 'echo "export PATH=/opt/kafka/bin:\$PATH" >> /home/ubuntu/.bashrc'
+  - 'chown ubuntu:ubuntu /home/ubuntu/.bashrc'
+
+  # 4. Create directories for Kafka logs
+  - 'mkdir -p /opt/kafka/kraft-combined-logs'
+  - 'chown -R ubuntu:ubuntu /opt/kafka/kraft-combined-logs'
+
+  # 5. Configure Kafka for KRaft mode - Generate cluster ID and format storage
+  - 'CLUSTER_ID=$(sudo -u ubuntu /opt/kafka/bin/kafka-storage.sh random-uuid) && echo "Generated Cluster ID: $CLUSTER_ID" >> /var/log/kafka-setup.log'
+  
+  # Format the storage directory with the cluster ID in standalone mode (this is the key step!)
+  - 'CLUSTER_ID=$(sudo -u ubuntu /opt/kafka/bin/kafka-storage.sh random-uuid) && sudo -u ubuntu /opt/kafka/bin/kafka-storage.sh format -t $CLUSTER_ID -c /opt/kafka/config/server.properties --standalone'
+
+  # 6. Create a systemd service to manage Kafka with proper Java settings
+  - |
+    cat > /etc/systemd/system/kafka.service <<EOF
+    [Unit]
+    Description=Apache Kafka Server (KRaft mode)
+    Documentation=https://kafka.apache.org/documentation/
+    Requires=network.target
+    After=network.target
+
+    [Service]
+    Type=simple
+    User=ubuntu
+    Group=ubuntu
+    Environment="KAFKA_HEAP_OPTS=-Xmx1G -Xms1G"
+    Environment="PATH=/opt/kafka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    WorkingDirectory=/opt/kafka
+    
+    # Start the Kafka server
+    ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties
+    
+    # Stop the Kafka server
+    ExecStop=/opt/kafka/bin/kafka-server-stop.sh
+    
+    # Restart the service on abnormal exit
+    Restart=on-abnormal
+    RestartSec=10
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+
+  # 7. Enable and start the Kafka service
+  - 'systemctl daemon-reload'
+  - 'systemctl enable kafka.service'
+  - 'systemctl start kafka.service'
+
+  # 8. Create completion file to signal setup is done
+  - |
+    cat > /home/ubuntu/kafka-setup-complete.txt <<EOF
+    Kafka 4.0.0 Setup Complete!
+    
+    Your Kafka cluster is running in KRaft mode and ready to use:
+    - Broker: localhost:9092
+    - Controller: localhost:9093
+    
+    Common commands:
+    - List topics: /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+    - Create topic: /opt/kafka/bin/kafka-topics.sh --create --topic my-topic --bootstrap-server localhost:9092
+    - Producer: /opt/kafka/bin/kafka-console-producer.sh --topic my-topic --bootstrap-server localhost:9092
+    - Consumer: /opt/kafka/bin/kafka-console-consumer.sh --topic my-topic --from-beginning --bootstrap-server localhost:9092
+    
+    Service management:
+    - Check status: sudo systemctl status kafka
+    - Stop service: sudo systemctl stop kafka
+    - Start service: sudo systemctl start kafka
+    - Restart service: sudo systemctl restart kafka
+    EOF
+  - 'chown ubuntu:ubuntu /home/ubuntu/kafka-setup-complete.txt'

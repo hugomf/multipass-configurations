@@ -1,0 +1,39 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+# Install required packages
+packages:
+  - curl
+  - git
+  - snapd
+
+# Run commands to install and configure Ollama
+runcmd:
+  # Install Ollama via Snap
+  - snap install ollama --channel=beta
+  # Configure Ollama to listen on all interfaces for host access
+  - snap set ollama host=0.0.0.0:11434
+  # Allow port 11434 through the firewall
+  - ufw allow 11434
+  # Pull the codellama:7b-code model (modify as needed)
+  - ollama pull codellama:7b-code
+  # Ensure Ollama service is running
+  - snap start ollama
+
+# Write a welcome message with instructions
+write_files:
+  - path: /home/ubuntu/ollama_setup.txt
+    content: |
+      Ollama is installed and running on this VM.
+      - Ollama service is accessible at http://<VM_IP>:11434
+      - Model installed: codellama:7b-code
+      - To check the Ollama service: sudo snap services ollama
+      - To list models: ollama list
+      - Configure Cline/Roo Cline in VS Code with the VM's IP (find it with `multipass info ollama-vm`).
+    permissions: '0644'
+    owner: ubuntu:ubuntu
+
+# Set up the default user
+users:
+  - default

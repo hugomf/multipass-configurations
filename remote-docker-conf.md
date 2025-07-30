@@ -1,6 +1,29 @@
 # Configuring Remote Docker Access from macOS to Multipass Ubuntu VM
 
-This guide explains how to set up Docker on your macOS host to control a Docker daemon running inside a Multipass Ubuntu VM. This allows you to use the `docker` command locally while the containers run inside the VM.
+This guide explains how to configure remote Docker access from your **macOS** host machine to control a Docker daemon running inside a Multipass Ubuntu VM. This setup allows you to execute `docker` commands locally from your **macOS** terminal while the actual Docker containers run inside the **Multipass Ubuntu 24.04 VM**, effectively avoiding the need to install Docker Desktop on your **macOS** host machine.
+
+**Key Benefits:**
+- Use native `docker` CLI commands from macOS without Docker Desktop
+- Containers run in an isolated Ubuntu VM environment
+- Leverages Multipass for lightweight VM management
+- Maintains separation between host OS and container runtime
+
+**Architecture Overview:**
+Your macOS host acts as a Docker client that communicates with the Docker daemon running in the Ubuntu VM over the network, providing a seamless container development experience without the overhead of Docker Desktop.
+
+```mermaid
+graph LR
+    A[macOS Terminal<br/>Docker CLI] -->|Docker Commands| B[Network<br/>TCP Connection]
+    B -->|Remote API| C[Ubuntu VM<br/>Docker Daemon]
+    C --> D[Containers]
+    
+    E[Multipass] -.->|Manages| C
+    
+    style A fill:#e1f5fe
+    style C fill:#c8e6c9
+    style D fill:#ffecb3
+    style E fill:#fff3e0
+ ```
 
 ## Prerequisites
 
@@ -39,7 +62,7 @@ This guide explains how to set up Docker on your macOS host to control a Docker 
     * Create or edit `/etc/docker/daemon.json`:
 
         ```bash
-            sudo nano /etc/docker/daemon.json
+        sudo nano /etc/docker/daemon.json
         ```
 
     * Add the following content:
@@ -85,6 +108,14 @@ This guide explains how to set up Docker on your macOS host to control a Docker 
     ```
 
     You should see `dockerd` listening on `0.0.0.0:2375`.
+
+* Go back to your host machine
+
+```bash
+exit
+```
+
+---
 
 ### On macOS Host:
 
